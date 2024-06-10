@@ -73,9 +73,9 @@ namespace MicMuter.WPF {
         /// <summary>
         ///   Sucht eine lokalisierte Ressource vom Typ System.Byte[].
         /// </summary>
-        public static byte[] microphone_activated {
+        public static byte[] MicrophoneActivatedSound {
             get {
-                object obj = ResourceManager.GetObject("microphone_activated", resourceCulture);
+                object obj = ResourceManager.GetObject("MicrophoneActivatedSound", resourceCulture);
                 return ((byte[])(obj));
             }
         }
@@ -83,9 +83,9 @@ namespace MicMuter.WPF {
         /// <summary>
         ///   Sucht eine lokalisierte Ressource vom Typ System.Byte[].
         /// </summary>
-        public static byte[] microphone_muted {
+        public static byte[] MicrophoneMutedSound {
             get {
-                object obj = ResourceManager.GetObject("microphone_muted", resourceCulture);
+                object obj = ResourceManager.GetObject("MicrophoneMutedSound", resourceCulture);
                 return ((byte[])(obj));
             }
         }

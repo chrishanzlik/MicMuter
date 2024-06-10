@@ -121,10 +121,10 @@
   <data name="GreenMicrophone" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>Resources\mic-green.ico;System.Drawing.Icon, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
   </data>
-  <data name="microphone_activated" type="System.Resources.ResXFileRef, System.Windows.Forms">
+  <data name="MicrophoneActivatedSound" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>Resources\microphone-activated.mp3;System.Byte[], mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </data>
-  <data name="microphone_muted" type="System.Resources.ResXFileRef, System.Windows.Forms">
+  <data name="MicrophoneMutedSound" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>Resources\microphone-muted.mp3;System.Byte[], mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </data>
   <data name="RedMicrophone" type="System.Resources.ResXFileRef, System.Windows.Forms">

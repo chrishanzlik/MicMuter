@@ -10,7 +10,7 @@
         xmlns:properties="clr-namespace:MicMuter.WPF"
         xmlns:local="clr-namespace:MicMuter.WPF"
         mc:Ignorable="d"
-        Title="MainWindow" Height="450" Width="800" Visibility="Visible" ShowInTaskbar="true">
+        Title="MicMuter" Height="1" Width="1" Visibility="Collapsed" ShowInTaskbar="False">
     <Grid>
         <tb:TaskbarIcon
             x:Name="TaskbarIcon"
