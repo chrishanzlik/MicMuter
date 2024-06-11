@@ -89,7 +89,14 @@ namespace MicMuter.WPF.Services
                 WriteTimeout = 10000
             };
 
-            sp.Open();
+            if (!sp.IsOpen)
+            {
+                try
+                {
+                    sp.Open();
+                }
+                catch { sp.Close(); }
+            }
 
             // Seems weird, but required for reconnect... :/
             System.Threading.Thread.Sleep(4000);
@@ -113,6 +120,7 @@ namespace MicMuter.WPF.Services
                     },
                     () => { });
 
+            if (sp.IsOpen)
             sp.Write([6], 0, 1);
 
             return () => sub.Dispose();

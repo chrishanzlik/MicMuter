@@ -34,7 +34,7 @@ namespace MicMuter.WPF
 
         public ViewModelActivator Activator { get; } = new();
 
-        public Interaction<Unit, Unit> ConnectionErrorInteraction { get; }
+        public Interaction<Unit, bool> ConnectionErrorInteraction { get; }
 
         public ReactiveCommand<MicState, Unit> SendMicrophoneState { get; }
         public ReactiveCommand<bool, MicState> ToggleMicrophone { get; }
@@ -51,7 +51,7 @@ namespace MicMuter.WPF
             ToggleMicrophone = ReactiveCommand.CreateFromTask<bool, MicState>(_audioService.ToggleMicrophoneAsync);
             Connect = ReactiveCommand.CreateFromObservable(_deviceService.Connect);
 
-            ConnectionErrorInteraction = new Interaction<Unit, Unit>();
+            ConnectionErrorInteraction = new Interaction<Unit, bool>();
 
             _initialConnected = Observable.Merge(
                 Connect.Select(_ => true),
@@ -73,8 +73,16 @@ namespace MicMuter.WPF
                     .InvokeCommand(ToggleMicrophone)
                     .DisposeWith(disposable);
 
-                Connect.Execute().Subscribe((_) => { }, error => {
-                    ConnectionErrorInteraction.Handle(Unit.Default).Subscribe();
+                TryToConnect().DisposeWith(disposable);
+            });
+        }
+
+        private IDisposable TryToConnect()
+        {
+            return Connect.Execute().Subscribe((_) => { }, error => {
+                ConnectionErrorInteraction.Handle(Unit.Default).Subscribe(reconnect =>
+                {
+                    if (reconnect) TryToConnect();
                 });
             });
         }

@@ -1,4 +1,5 @@
 ﻿using ReactiveUI;
+using System;
 using System.Reactive;
 using System.Reactive.Disposables;
 using System.Threading.Tasks;
@@ -13,7 +14,7 @@ namespace MicMuter.WPF
     {
         //TODO: resx
         const string connectionErrorCaption = "MicMuter Verbindung Fehlgeschlagen";
-        const string connectionErrorText = "Das MicMuter Gerät wurde nicht gefunden. Bitte stecken Sie das Gerät ein und verbinden es über das Taskleistenicon erneut.";
+        const string connectionErrorText = "Das MicMuter Gerät wurde nicht gefunden. Bitte stecken Sie das Gerät ein und verbinden es über das Taskleistenicon erneut.\r\n\r\nAlternativ können Sie jetzt einen neuen Verbindungsversuch vornehmen?";
 
         public MainWindow()
         {
@@ -27,8 +28,8 @@ namespace MicMuter.WPF
 
                 this.BindInteraction(ViewModel, x => x.ConnectionErrorInteraction, (context) =>
                 {
-                    MessageBox.Show(connectionErrorText, connectionErrorCaption, MessageBoxButton.OK, MessageBoxImage.Error);
-                    context.SetOutput(Unit.Default);
+                    var result = MessageBox.Show(connectionErrorText, connectionErrorCaption, MessageBoxButton.YesNoCancel, MessageBoxImage.Error);
+                    context.SetOutput(result == MessageBoxResult.Yes);
                     return Task.CompletedTask;
                 }).DisposeWith(disposable);
             });
