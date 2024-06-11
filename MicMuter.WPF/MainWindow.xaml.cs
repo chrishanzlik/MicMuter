@@ -1,19 +1,8 @@
 ﻿using ReactiveUI;
-using System;
-using System.Collections.Generic;
-using System.Linq;
+using System.Reactive;
 using System.Reactive.Disposables;
-using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
-using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
-using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Navigation;
-using System.Windows.Shapes;
 
 namespace MicMuter.WPF
 {
@@ -22,6 +11,10 @@ namespace MicMuter.WPF
     /// </summary>
     public partial class MainWindow : ReactiveWindow<MainWindowViewModel>
     {
+        //TODO: resx
+        const string connectionErrorCaption = "MicMuter Verbindung Fehlgeschlagen";
+        const string connectionErrorText = "Das MicMuter Gerät wurde nicht gefunden. Bitte stecken Sie das Gerät ein und verbinden es über das Taskleistenicon erneut.";
+
         public MainWindow()
         {
             InitializeComponent();
@@ -31,6 +24,13 @@ namespace MicMuter.WPF
             this.WhenActivated(disposable =>
             {
                 this.OneWayBind(ViewModel, vm => vm.StatusIcon, v => v.TaskbarIcon.Icon).DisposeWith(disposable);
+
+                this.BindInteraction(ViewModel, x => x.ConnectionErrorInteraction, (context) =>
+                {
+                    MessageBox.Show(connectionErrorText, connectionErrorCaption, MessageBoxButton.OK, MessageBoxImage.Error);
+                    context.SetOutput(Unit.Default);
+                    return Task.CompletedTask;
+                }).DisposeWith(disposable);
             });
         }
     }

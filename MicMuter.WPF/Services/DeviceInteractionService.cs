@@ -10,28 +10,27 @@ using System.Reactive.Subjects;
 
 namespace MicMuter.WPF.Services
 {
-    public class DeviceInteractionService : IDeviceInteractionService, IDisposable
+    public class DeviceInteractionService(ISerialPortWatcher? serialPortWatcher = null) : IDeviceInteractionService, IDisposable
     {
-        private readonly ISerialPortWatcher _serialPortWatcher;
-        private readonly BehaviorSubject<SerialPort?> _serialPortChange = new(null);
+        private const byte MIC_OFF_BYTE = 0;
+        private const byte MIC_ON_BYTE = 1;
+        private const byte HANDSHAKE_BYTE = 6;
 
+        private readonly ISerialPortWatcher _serialPortWatcher = serialPortWatcher ?? Locator.Current.GetService<ISerialPortWatcher>()!;
+        private readonly BehaviorSubject<SerialPort?> _serialPortChange = new(null);
 
         public IObservable<Unit> ButtonPress => this._serialPortChange
             .AsObservable()
             .Where(x => x != null)
-            .Select(x => ListenForButtonPresses(x!))
+            .Select(x => ButtonPresses(x!))
             .Switch();
-
-        public DeviceInteractionService(ISerialPortWatcher? serialPortWatcher = null)
-        {
-            _serialPortWatcher = serialPortWatcher ?? Locator.Current.GetService<ISerialPortWatcher>()!;
-        }
 
         public IObservable<Unit> Connect()
         {
             var identifications = SerialPort.GetPortNames()
-                .Select(DeviceHandshake)
+                .Select(DeviceHandshakes)
                 .Merge()
+                .Where(x => x != null)
                 .Publish()
                 .RefCount();
 
@@ -50,6 +49,13 @@ namespace MicMuter.WPF.Services
             return Observable.Create<Unit>(observer =>
             {
                 var initSub = identifications.Select(_ => Unit.Default).Subscribe(observer);
+
+                identifications
+                    .Take(1)
+                    .Where(x => x == null)
+                    .Timeout(TimeSpan.FromSeconds(5))
+                    .Catch(Observable.Return<SerialPort?>(null))
+                    .Subscribe((_) => observer.OnError(new Exception("No compatible device found.")));
 
                 return () => {
                     syncSub.Dispose();
@@ -75,43 +81,44 @@ namespace MicMuter.WPF.Services
         }
 
 
-        private IObservable<SerialPort> DeviceHandshake(string comPort)
+        private static IObservable<SerialPort> DeviceHandshakes(string comPort) => Observable.Create<SerialPort>(observer =>
         {
-            return Observable.Create<SerialPort>(observer =>
+            var sp = new SerialPort(comPort, 9600, Parity.None, 8, StopBits.One)
             {
-                var sp = new SerialPort(comPort, 9600, Parity.None, 8, StopBits.One);
+                ReadTimeout = 10000,
+                WriteTimeout = 10000
+            };
 
-                sp.Open();
+            sp.Open();
 
-                // Seems weird, but required for reconnect... :/
-                System.Threading.Thread.Sleep(4000);
+            // Seems weird, but required for reconnect... :/
+            System.Threading.Thread.Sleep(4000);
 
-                var sub = Observable.FromEventPattern<SerialDataReceivedEventHandler, SerialDataReceivedEventArgs>(
-                        x => sp.DataReceived += x,
-                        x => sp.DataReceived -= x)
-                    .Take(1)
-                    .Timeout(TimeSpan.FromSeconds(30))
-                    .Where(_ => (byte)sp.ReadByte() is 6)
-                    .Select((ev) => (ev.Sender as SerialPort) ?? sp)
-                    .Subscribe(
-                        (next) => observer.OnNext(next),
-                        error =>
+            var sub = Observable.FromEventPattern<SerialDataReceivedEventHandler, SerialDataReceivedEventArgs>(
+                    x => sp.DataReceived += x,
+                    x => sp.DataReceived -= x)
+                .Take(1)
+                .Timeout(TimeSpan.FromSeconds(10))
+                .Where(_ => (byte)sp.ReadByte() is HANDSHAKE_BYTE)
+                .Select((ev) => (ev.Sender as SerialPort) ?? sp)
+                .Subscribe(
+                    (next) => observer.OnNext(next),
+                    error =>
+                    {
+                        if (sp.IsOpen)
                         {
-                            if (sp.IsOpen)
-                            {
-                                sp.Close();
-                            }
-                            sp.Dispose();
-                        },
-                        () => { });
+                            sp.Close();
+                        }
+                        sp.Dispose();
+                    },
+                    () => { });
 
-                sp.Write([6], 0, 1);
+            sp.Write([6], 0, 1);
 
-                return () => sub.Dispose();
-            });
-        }
+            return () => sub.Dispose();
+        });
 
-        private IObservable<Unit> ListenForButtonPresses(SerialPort comPort) => Observable.Create<Unit>(observer =>
+        private static IObservable<Unit> ButtonPresses(SerialPort comPort) => Observable.Create<Unit>(observer =>
         {
             if (!comPort.IsOpen)
             {
@@ -119,9 +126,9 @@ namespace MicMuter.WPF.Services
             }
 
             var sub = Observable.FromEventPattern<SerialDataReceivedEventHandler, SerialDataReceivedEventArgs>(
-                x => comPort.DataReceived += x,
-                x => comPort.DataReceived -= x
-            ).Where(_ => (byte)comPort.ReadByte() is 0 or 1)
+                    x => comPort.DataReceived += x,
+                    x => comPort.DataReceived -= x)
+                .Where(_ => (byte)comPort.ReadByte() is MIC_OFF_BYTE or MIC_ON_BYTE)
                 .Select((_) => Unit.Default)
                 .Subscribe(observer);
 

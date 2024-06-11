@@ -29,10 +29,16 @@ namespace MicMuter.WPF
         readonly ObservableAsPropertyHelper<Icon> _statusIcon;
         public Icon StatusIcon => _statusIcon.Value;
 
+        readonly ObservableAsPropertyHelper<bool> _initialConnected;
+        public bool InitialConnected => _initialConnected.Value;
+
         public ViewModelActivator Activator { get; } = new();
+
+        public Interaction<Unit, Unit> ConnectionErrorInteraction { get; }
 
         public ReactiveCommand<MicState, Unit> SendMicrophoneState { get; }
         public ReactiveCommand<bool, MicState> ToggleMicrophone { get; }
+        public ReactiveCommand<Unit, Unit> Connect { get; }
 
         public MainWindowViewModel(
             IDeviceInteractionService? deviceInteractionService = null,
@@ -43,7 +49,13 @@ namespace MicMuter.WPF
 
             SendMicrophoneState = ReactiveCommand.Create<MicState>(_deviceService.SendMicrophoneState);
             ToggleMicrophone = ReactiveCommand.CreateFromTask<bool, MicState>(_audioService.ToggleMicrophoneAsync);
+            Connect = ReactiveCommand.CreateFromObservable(_deviceService.Connect);
 
+            ConnectionErrorInteraction = new Interaction<Unit, Unit>();
+
+            _initialConnected = Observable.Merge(
+                Connect.Select(_ => true),
+                Connect.ThrownExceptions.Select(_ => false)).ToProperty(this, x => x.InitialConnected);
             _micState = _audioService.StateChanges.ToProperty(this, x => x.MicState);
             _statusIcon = this.WhenAnyValue(x => x.MicState)
                 .Select(state => state == MicState.Muted ? Resources.RedMicrophone : Resources.GreenMicrophone)
@@ -61,7 +73,9 @@ namespace MicMuter.WPF
                     .InvokeCommand(ToggleMicrophone)
                     .DisposeWith(disposable);
 
-                _deviceService.Connect().Subscribe().DisposeWith(disposable);
+                Connect.Execute().Subscribe((_) => { }, error => {
+                    ConnectionErrorInteraction.Handle(Unit.Default).Subscribe();
+                });
             });
         }
     }
