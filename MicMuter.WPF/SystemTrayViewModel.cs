@@ -1,20 +1,21 @@
-﻿using MicMuter.WPF.Models;
+﻿using MicMuter.WPF.Helpers;
+using MicMuter.WPF.Models;
 using MicMuter.WPF.Services;
 using ReactiveUI;
 using Splat;
 using System;
 using System.Drawing;
-using System.Linq;
 using System.Reactive;
 using System.Reactive.Disposables;
 using System.Reactive.Linq;
+using System.Windows;
 
 namespace MicMuter.WPF
 {
-    public class MainWindowViewModel : ReactiveObject, IActivatableViewModel
+    public class SystemTrayViewModel : ReactiveObject, IActivatableViewModel
     {
-        private readonly IDeviceInteractionService _deviceService;
         private readonly IAudioService _audioService;
+        private readonly IDeviceInteractionService _deviceService;
 
         bool _playSounds = true;
         public bool PlaySounds
@@ -23,35 +24,31 @@ namespace MicMuter.WPF
             set => this.RaiseAndSetIfChanged(ref _playSounds, value);
         }
 
-        readonly ObservableAsPropertyHelper<MicState> _micState;
-        public MicState MicState => _micState.Value;
-
         readonly ObservableAsPropertyHelper<Icon> _statusIcon;
         public Icon StatusIcon => _statusIcon.Value;
+
+        readonly ObservableAsPropertyHelper<MicState> _micState;
+        public MicState MicState => _micState.Value;
 
         readonly ObservableAsPropertyHelper<bool> _initialConnected;
         public bool InitialConnected => _initialConnected.Value;
 
-        public ViewModelActivator Activator { get; } = new();
-
-        public Interaction<Unit, bool> ConnectionErrorInteraction { get; }
-
         public ReactiveCommand<MicState, Unit> SendMicrophoneState { get; }
         public ReactiveCommand<bool, MicState> ToggleMicrophone { get; }
         public ReactiveCommand<Unit, Unit> Connect { get; }
+        public ReactiveCommand<Unit, Unit> ExitApplication { get; } = ReactiveCommand.Create(() => Application.Current.Shutdown());
 
-        public MainWindowViewModel(
-            IDeviceInteractionService? deviceInteractionService = null,
-            IAudioService? audioService = null)
+        public ViewModelActivator Activator { get; }
+
+        public SystemTrayViewModel()
         {
-            _deviceService = deviceInteractionService ?? Locator.Current.GetService<IDeviceInteractionService>()!;
-            _audioService = audioService ?? Locator.Current.GetService<IAudioService>()!;
+            Activator = Locator.Current.GetService<ViewModelActivator>() ?? throw new ArgumentException("No root activator provided.");
+            _deviceService = Locator.Current.GetService<IDeviceInteractionService>()!;
+            _audioService = Locator.Current.GetService<IAudioService>()!;
 
             SendMicrophoneState = ReactiveCommand.Create<MicState>(_deviceService.SendMicrophoneState);
             ToggleMicrophone = ReactiveCommand.CreateFromTask<bool, MicState>(_audioService.ToggleMicrophoneAsync);
             Connect = ReactiveCommand.CreateFromObservable(_deviceService.Connect);
-
-            ConnectionErrorInteraction = new Interaction<Unit, bool>();
 
             _initialConnected = Observable.Merge(
                 Connect.Select(_ => true),
@@ -80,9 +77,9 @@ namespace MicMuter.WPF
         private IDisposable TryToConnect()
         {
             return Connect.Execute().Subscribe((_) => { }, error => {
-                ConnectionErrorInteraction.Handle(Unit.Default).Subscribe(reconnect =>
+                Interactions.ConnectionErrorRetryInteraction.Handle(error).Subscribe(recovery =>
                 {
-                    if (reconnect) TryToConnect();
+                    if (recovery == ErrorRecoveryOption.Retry) TryToConnect();
                 });
             });
         }

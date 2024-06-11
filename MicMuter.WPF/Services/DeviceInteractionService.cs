@@ -16,6 +16,7 @@ namespace MicMuter.WPF.Services
         private const byte MIC_ON_BYTE = 1;
         private const byte HANDSHAKE_BYTE = 6;
 
+        private readonly Exception _connectionException = new Exception("No compatible device found.");
         private readonly ISerialPortWatcher _serialPortWatcher = serialPortWatcher ?? Locator.Current.GetService<ISerialPortWatcher>()!;
         private readonly BehaviorSubject<SerialPort?> _serialPortChange = new(null);
 
@@ -27,7 +28,11 @@ namespace MicMuter.WPF.Services
 
         public IObservable<Unit> Connect()
         {
-            var identifications = SerialPort.GetPortNames()
+            var portNames = SerialPort.GetPortNames();
+
+            if (!portNames.Any()) return Observable.Throw<Unit>(_connectionException);
+
+            var identifications = portNames
                 .Select(DeviceHandshakes)
                 .Merge()
                 .Where(x => x != null)
@@ -50,12 +55,11 @@ namespace MicMuter.WPF.Services
             {
                 var initSub = identifications.Select(_ => Unit.Default).Subscribe(observer);
 
-                identifications
-                    .Take(1)
-                    .Where(x => x == null)
+                _serialPortChange
                     .Timeout(TimeSpan.FromSeconds(5))
-                    .Catch(Observable.Return<SerialPort?>(null))
-                    .Subscribe((_) => observer.OnError(new Exception("No compatible device found.")));
+                    .Where(x => x != null)
+                    .Take(1)
+                    .Subscribe((_) => { }, (error) => observer.OnError(_connectionException));
 
                 return () => {
                     syncSub.Dispose();
