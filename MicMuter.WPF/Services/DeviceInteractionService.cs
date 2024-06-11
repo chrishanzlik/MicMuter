@@ -25,18 +25,6 @@ namespace MicMuter.WPF.Services
         public DeviceInteractionService(ISerialPortWatcher? serialPortWatcher = null)
         {
             _serialPortWatcher = serialPortWatcher ?? Locator.Current.GetService<ISerialPortWatcher>()!;
-
-
-            _serialPortWatcher.DeviceDisconnected.Subscribe(ports =>
-            {
-                var port = this._serialPortChange.Value;
-                if (port != null && !port.IsOpen)
-                {
-                    port.Dispose();
-                    GC.Collect();
-                    _serialPortChange.OnNext(null);
-                }
-            });
         }
 
         public IObservable<Unit> Connect()
@@ -49,6 +37,16 @@ namespace MicMuter.WPF.Services
 
             var syncSub = identifications.Subscribe(_serialPortChange.OnNext);
 
+            var reconnectSub = _serialPortWatcher.DeviceConnected.Subscribe(ports =>
+            {
+                var port = _serialPortChange.Value;
+                if (port != null && !port.IsOpen)
+                {
+                    try { port.Open(); }
+                    catch (Exception) { }
+                }
+            });
+
             return Observable.Create<Unit>(observer =>
             {
                 var initSub = identifications.Select(_ => Unit.Default).Subscribe(observer);
@@ -56,6 +54,7 @@ namespace MicMuter.WPF.Services
                 return () => {
                     syncSub.Dispose();
                     initSub.Dispose();
+                    reconnectSub.Dispose();
                     this.Dispose();
                 };
             });
