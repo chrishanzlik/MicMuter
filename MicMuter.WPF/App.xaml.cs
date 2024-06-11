@@ -5,11 +5,10 @@ using MicMuter.WPF.Services;
 using ReactiveUI;
 using Splat;
 using System;
-using System.Reactive.Disposables;
 using System.Reflection;
 using System.Threading.Tasks;
 using System.Windows;
-using System.Windows.Shell;
+using Resx = MicMuter.WPF.Resources;
 
 namespace MicMuter.WPF
 {
@@ -31,6 +30,7 @@ namespace MicMuter.WPF
             Locator.CurrentMutable.Register<IAudioService, AudioService>();
             Locator.CurrentMutable.Register<IDeviceInteractionService>(() =>
                 new DeviceInteractionService(Locator.Current.GetService<ISerialPortWatcher>()));
+
             Locator.CurrentMutable.Register<ISerialPortWatcher, SerialPortWatcher>();
 
             RegisterInteractions();
@@ -54,18 +54,11 @@ namespace MicMuter.WPF
             base.OnExit(e);
         }
 
-        public int GetAffinityForView(Type view)
+        private void RegisterInteractions()
         {
-            throw new NotImplementedException();
-        }
-
-        private static void RegisterInteractions()
-        {
-            Interactions.ConnectionErrorRetryInteraction.RegisterHandler(interaction =>
+            Interactions.ConnectionError.RegisterHandler(interaction =>
             {
-                const string connectionErrorCaption = "MicMuter Verbindung Fehlgeschlagen";
-                const string connectionErrorText = "Das MicMuter Gerät wurde nicht gefunden. Bitte stecken Sie das Gerät ein und verbinden es über das Taskleistenicon erneut.\r\n\r\nAlternativ können Sie jetzt einen neuen Verbindungsversuch vornehmen?";
-                var result = MessageBox.Show(connectionErrorText, connectionErrorCaption, MessageBoxButton.YesNoCancel, MessageBoxImage.Error);
+                var result = MessageBox.Show(Resx.ConnectionErrorText, Resx.ConnectionErrorCaption, MessageBoxButton.YesNoCancel, MessageBoxImage.Error);
                 interaction.SetOutput(result == MessageBoxResult.Yes ? ErrorRecoveryOption.Retry : ErrorRecoveryOption.Abort);
                 return Task.CompletedTask;
             });

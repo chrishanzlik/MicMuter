@@ -77,7 +77,7 @@ namespace MicMuter.WPF
         private IDisposable TryToConnect()
         {
             return Connect.Execute().Subscribe((_) => { }, error => {
-                Interactions.ConnectionErrorRetryInteraction.Handle(error).Subscribe(recovery =>
+                Interactions.ConnectionError.Handle(error).Subscribe(recovery =>
                 {
                     if (recovery == ErrorRecoveryOption.Retry) TryToConnect();
                 });

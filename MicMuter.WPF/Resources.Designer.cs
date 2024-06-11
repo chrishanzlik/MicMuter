@@ -61,6 +61,26 @@ namespace MicMuter.WPF {
         }
         
         /// <summary>
+        ///   Sucht eine lokalisierte Zeichenfolge, die MicMuter Verbindung Fehlgeschlagen ähnelt.
+        /// </summary>
+        public static string ConnectionErrorCaption {
+            get {
+                return ResourceManager.GetString("ConnectionErrorCaption", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Sucht eine lokalisierte Zeichenfolge, die Das MicMuter Gerät wurde nicht gefunden. Bitte stecken Sie das Gerät ein und verbinden es über das Taskleistenicon erneut.
+        ///
+        ///Alternativ können Sie jetzt einen neuen Verbindungsversuch vornehmen? ähnelt.
+        /// </summary>
+        public static string ConnectionErrorText {
+            get {
+                return ResourceManager.GetString("ConnectionErrorText", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Sucht eine lokalisierte Ressource vom Typ System.Drawing.Icon ähnlich wie (Symbol).
         /// </summary>
         public static System.Drawing.Icon GreenMicrophone {

@@ -6,6 +6,6 @@ namespace MicMuter.WPF.Helpers
 {
     public static class Interactions
     {
-        public static readonly Interaction<Exception, ErrorRecoveryOption> ConnectionErrorRetryInteraction = new();
+        public static readonly Interaction<Exception, ErrorRecoveryOption> ConnectionError = new();
     }
 }
