@@ -13,7 +13,7 @@ namespace MicMuter.WPF
 {
     public class MainWindowViewModel : ReactiveObject, IActivatableViewModel
     {
-        private readonly IDeviceInteractionService _deviceInteractionService;
+        private readonly IDeviceInteractionService _deviceService;
         private readonly IAudioService _audioService;
 
         bool _playSounds = true;
@@ -38,14 +38,13 @@ namespace MicMuter.WPF
             IDeviceInteractionService? deviceInteractionService = null,
             IAudioService? audioService = null)
         {
-            _deviceInteractionService = deviceInteractionService ?? Locator.Current.GetService<IDeviceInteractionService>()!;
+            _deviceService = deviceInteractionService ?? Locator.Current.GetService<IDeviceInteractionService>()!;
             _audioService = audioService ?? Locator.Current.GetService<IAudioService>()!;
 
-            SendMicrophoneState = ReactiveCommand.Create<MicState>(_deviceInteractionService.SendMicrophoneState);
+            SendMicrophoneState = ReactiveCommand.Create<MicState>(_deviceService.SendMicrophoneState);
             ToggleMicrophone = ReactiveCommand.CreateFromTask<bool, MicState>(_audioService.ToggleMicrophoneAsync);
 
             _micState = _audioService.StateChanges.ToProperty(this, x => x.MicState);
-
             _statusIcon = this.WhenAnyValue(x => x.MicState)
                 .Select(state => state == MicState.Muted ? Resources.RedMicrophone : Resources.GreenMicrophone)
                 .ToProperty(this, x => x.StatusIcon);
@@ -53,20 +52,17 @@ namespace MicMuter.WPF
             this.WhenActivated(disposable =>
             {
                 _audioService.StateChanges
+                    .Merge(Observable.Interval(TimeSpan.FromSeconds(5)).Select(_ => _audioService.State))
                     .InvokeCommand(SendMicrophoneState)
                     .DisposeWith(disposable);
 
-                _deviceInteractionService.ButtonPress
-                    .CombineLatest(this.WhenAnyValue(x => x.PlaySounds))
-                    .Select((x) => x.Second)
+                _deviceService.ButtonPress
+                    .WithLatestFrom(this.WhenAnyValue(x => x.PlaySounds), (value, playSounds) => playSounds)
                     .InvokeCommand(ToggleMicrophone)
                     .DisposeWith(disposable);
 
-                _deviceInteractionService.Connect("COM3");
-
-                Disposable.Create(() => { }).DisposeWith(disposable);
+                _deviceService.Connect().Subscribe().DisposeWith(disposable);
             });
         }
-
     }
 }

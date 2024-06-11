@@ -4,7 +4,6 @@ using NAudio.Wave;
 using System;
 using System.IO;
 using System.Reactive.Linq;
-using System.Threading;
 using System.Threading.Tasks;
 
 namespace MicMuter.WPF.Services
@@ -13,11 +12,13 @@ namespace MicMuter.WPF.Services
     {
         readonly MMDeviceEnumerator _enumerator = new();
 
+        AudioEndpointVolume DefaultAudioEndpointVolume =>
+            _enumerator.GetDefaultAudioEndpoint(DataFlow.Capture, Role.Communications).AudioEndpointVolume;
+
         public MicState State {
-            get =>
-                _enumerator.GetDefaultAudioEndpoint(DataFlow.Capture, Role.Communications).AudioEndpointVolume.Mute
-                    ? MicState.Muted
-                    : MicState.Activated;
+            get => DefaultAudioEndpointVolume.Mute
+                ? MicState.Muted
+                : MicState.Activated;
         }
 
         public IObservable<MicState> StateChanges => Observable.Interval(TimeSpan.FromMilliseconds(500))
@@ -26,11 +27,9 @@ namespace MicMuter.WPF.Services
             .Publish()
             .RefCount();
 
-
         public async Task MuteMicrophoneAsync(bool playSound)
         {
-            MMDevice device = _enumerator.GetDefaultAudioEndpoint(DataFlow.Capture, Role.Communications);
-            device.AudioEndpointVolume.Mute = true;
+            DefaultAudioEndpointVolume.Mute = true;
 
             if (playSound)
             {
@@ -40,8 +39,7 @@ namespace MicMuter.WPF.Services
 
         public async Task UnmuteMicrophoneAsync(bool playSound)
         {
-            MMDevice device = _enumerator.GetDefaultAudioEndpoint(DataFlow.Capture, Role.Communications);
-            device.AudioEndpointVolume.Mute = false;
+            DefaultAudioEndpointVolume.Mute = false;
 
             if (playSound)
             {
@@ -83,11 +81,6 @@ namespace MicMuter.WPF.Services
             }
         }
 
-        public void Dispose()
-        {
-            _enumerator.Dispose();
-        }
-
-
+        public void Dispose() => _enumerator.Dispose();
     }
 }

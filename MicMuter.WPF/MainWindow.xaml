@@ -11,6 +11,7 @@
         xmlns:local="clr-namespace:MicMuter.WPF"
         mc:Ignorable="d"
         Title="MicMuter" Height="1" Width="1" Visibility="Collapsed" ShowInTaskbar="False">
+
     <Grid>
         <tb:TaskbarIcon
             x:Name="TaskbarIcon"

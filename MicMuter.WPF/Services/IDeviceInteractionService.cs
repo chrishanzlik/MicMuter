@@ -8,11 +8,9 @@ namespace MicMuter.WPF.Services
 {
     public interface IDeviceInteractionService
     {
-        bool IsConnected { get; }
-
         IObservable<Unit> ButtonPress { get; }
 
-        void Connect(string comPort);
+        IObservable<Unit> Connect();
 
         void SendMicrophoneState(MicState state);
     }
