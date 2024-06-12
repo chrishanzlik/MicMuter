@@ -4,7 +4,6 @@ using MicMuter.WPF.Services;
 using ReactiveUI;
 using Splat;
 using System;
-using System.Drawing;
 using System.Reactive;
 using System.Reactive.Disposables;
 using System.Reactive.Linq;
@@ -17,15 +16,11 @@ namespace MicMuter.WPF
         private readonly IAudioService _audioService;
         private readonly IDeviceInteractionService _deviceService;
 
-        bool _playSounds = true;
-        public bool PlaySounds
-        {
-            get => _playSounds;
-            set => this.RaiseAndSetIfChanged(ref _playSounds, value);
-        }
+        readonly ObservableAsPropertyHelper<bool> _playSounds;
+        public bool PlaySounds => _playSounds.Value;
 
-        readonly ObservableAsPropertyHelper<Icon> _statusIcon;
-        public Icon StatusIcon => _statusIcon.Value;
+        readonly ObservableAsPropertyHelper<string> _statusIconPath;
+        public string StatusIconPath => _statusIconPath.Value;
 
         readonly ObservableAsPropertyHelper<MicState> _micState;
         public MicState MicState => _micState.Value;
@@ -35,6 +30,7 @@ namespace MicMuter.WPF
 
         public ReactiveCommand<MicState, Unit> SendMicrophoneState { get; }
         public ReactiveCommand<bool, MicState> ToggleMicrophone { get; }
+        public ReactiveCommand<Unit, Unit> ToggleStatusSoundOutput { get; }
         public ReactiveCommand<Unit, Unit> Connect { get; }
         public ReactiveCommand<Unit, Unit> ExitApplication { get; } = ReactiveCommand.Create(() => Application.Current.Shutdown());
 
@@ -49,14 +45,21 @@ namespace MicMuter.WPF
             SendMicrophoneState = ReactiveCommand.Create<MicState>(_deviceService.SendMicrophoneState);
             ToggleMicrophone = ReactiveCommand.CreateFromTask<bool, MicState>(_audioService.ToggleMicrophoneAsync);
             Connect = ReactiveCommand.CreateFromObservable(_deviceService.Connect);
+            ToggleStatusSoundOutput = ReactiveCommand.Create(() => { });
 
             _initialConnected = Observable.Merge(
                 Connect.Select(_ => true),
                 Connect.ThrownExceptions.Select(_ => false)).ToProperty(this, x => x.InitialConnected);
+
             _micState = _audioService.StateChanges.ToProperty(this, x => x.MicState);
-            _statusIcon = this.WhenAnyValue(x => x.MicState)
-                .Select(state => state == MicState.Muted ? Resources.RedMicrophone : Resources.GreenMicrophone)
-                .ToProperty(this, x => x.StatusIcon);
+
+            _statusIconPath = this.WhenAnyValue(x => x.MicState)
+                .Select(state => state == MicState.Muted ? "Resources/mic-red.ico" : "Resources/mic-green.ico")
+                .ToProperty(this, x => x.StatusIconPath);
+
+            _playSounds = ToggleStatusSoundOutput
+                .Select((_) => !PlaySounds)
+                .ToProperty(this, x => x.PlaySounds, () => true);
 
             this.WhenActivated(disposable =>
             {
