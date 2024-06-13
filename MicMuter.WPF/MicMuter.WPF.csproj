@@ -12,9 +12,11 @@
     <None Remove="Resources\mic-red.ico" />
     <None Remove="Resources\microphone-activated.mp3" />
     <None Remove="Resources\microphone-muted.mp3" />
+    <None Remove="Resources\sand-glass.ico" />
   </ItemGroup>
 
   <ItemGroup>
+    <PackageReference Include="akavache" Version="10.0.1" />
     <PackageReference Include="Hardcodet.NotifyIcon.Wpf" Version="1.1.0" />
     <PackageReference Include="NAudio" Version="2.2.1" />
     <PackageReference Include="ReactiveUI" Version="20.1.1" />
@@ -28,6 +30,7 @@
     <Resource Include="Resources\mic-red.ico" />
     <Resource Include="Resources\microphone-activated.mp3" />
     <Resource Include="Resources\microphone-muted.mp3" />
+    <Resource Include="Resources\sand-glass.ico" />
   </ItemGroup>
 
   <ItemGroup>

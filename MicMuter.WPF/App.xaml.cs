@@ -17,20 +17,22 @@ namespace MicMuter.WPF
     /// </summary>
     public partial class App : Application
     {
-        readonly ViewModelActivator rootActivator;
-        TaskbarIcon? taskbarIcon;
+        readonly AutoSuspendHelper _autoSuspendHelper;
+        readonly ViewModelActivator _rootActivator;
+        TaskbarIcon? _taskbarIcon;
 
         public App()
         {
-            rootActivator = new ViewModelActivator();
+            _rootActivator = new ViewModelActivator();
+            _autoSuspendHelper = new AutoSuspendHelper(this);
+            RxApp.SuspensionHost.CreateNewAppState = () => new SystemTrayViewModel();
+            RxApp.SuspensionHost.SetupDefaultSuspendResume(new AkavacheSuspensionDriver<SystemTrayViewModel>());
 
-            Locator.CurrentMutable.RegisterViewsForViewModels(Assembly.GetExecutingAssembly());
-            Locator.CurrentMutable.RegisterConstant(rootActivator);
+            Locator.CurrentMutable.RegisterConstant(_rootActivator);
             Locator.CurrentMutable.RegisterViewsForViewModels(Assembly.GetCallingAssembly());
             Locator.CurrentMutable.Register<IAudioService, AudioService>();
             Locator.CurrentMutable.Register<IDeviceInteractionService>(() =>
                 new DeviceInteractionService(Locator.Current.GetService<ISerialPortWatcher>()));
-
             Locator.CurrentMutable.Register<ISerialPortWatcher, SerialPortWatcher>();
 
             RegisterInteractions();
@@ -40,26 +42,36 @@ namespace MicMuter.WPF
         {
             base.OnStartup(e);
 
-            taskbarIcon = (TaskbarIcon)FindResource("TaskBarIcon");
+            _taskbarIcon = (TaskbarIcon)FindResource("TaskBarIcon");
+            _taskbarIcon.DataContext = RxApp.SuspensionHost.GetAppState<SystemTrayViewModel>();
+            _taskbarIcon.Icon = Resx.SandGlass;
 
-            rootActivator.Activate();
+            _rootActivator.Activate();
         }
 
         protected override void OnExit(ExitEventArgs e)
         {
-            rootActivator.Deactivate();
+            _rootActivator.Deactivate();
 
-            taskbarIcon?.Dispose();
+            _taskbarIcon?.Dispose();
 
             base.OnExit(e);
         }
 
-        private void RegisterInteractions()
+        private static void RegisterInteractions()
         {
             Interactions.ConnectionError.RegisterHandler(interaction =>
             {
-                var result = MessageBox.Show(Resx.ConnectionErrorText, Resx.ConnectionErrorCaption, MessageBoxButton.YesNoCancel, MessageBoxImage.Error);
-                interaction.SetOutput(result == MessageBoxResult.Yes ? ErrorRecoveryOption.Retry : ErrorRecoveryOption.Abort);
+                var result = MessageBox.Show(
+                    Resx.ConnectionErrorText,
+                    Resx.ConnectionErrorCaption,
+                    MessageBoxButton.YesNoCancel,
+                    MessageBoxImage.Error);
+
+                interaction.SetOutput(result == MessageBoxResult.Yes
+                    ? ErrorRecoveryOption.Retry
+                    : ErrorRecoveryOption.Abort);
+                
                 return Task.CompletedTask;
             });
         }

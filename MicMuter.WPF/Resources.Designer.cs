@@ -61,6 +61,15 @@ namespace MicMuter.WPF {
         }
         
         /// <summary>
+        ///   Sucht eine lokalisierte Zeichenfolge, die Verbinden ähnelt.
+        /// </summary>
+        public static string Connect {
+            get {
+                return ResourceManager.GetString("Connect", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Sucht eine lokalisierte Zeichenfolge, die MicMuter Verbindung Fehlgeschlagen ähnelt.
         /// </summary>
         public static string ConnectionErrorCaption {
@@ -70,13 +79,40 @@ namespace MicMuter.WPF {
         }
         
         /// <summary>
-        ///   Sucht eine lokalisierte Zeichenfolge, die Das MicMuter Gerät wurde nicht gefunden. Bitte stecken Sie das Gerät ein und verbinden es über das Taskleistenicon erneut.
+        ///   Sucht eine lokalisierte Zeichenfolge, die Es konnte keine Verbindung zum Endgerät hergestellt werden. Bitte überprüfen Sie ob das Gerät korrekt angeschlossen ist.
         ///
-        ///Alternativ können Sie jetzt einen neuen Verbindungsversuch vornehmen? ähnelt.
+        ///Möchten Sie einen erneuten Verbindungsversuch unternehmen? ähnelt.
         /// </summary>
         public static string ConnectionErrorText {
             get {
                 return ResourceManager.GetString("ConnectionErrorText", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Sucht eine lokalisierte Zeichenfolge, die Über Verbindungsfehler benachrichtigen ähnelt.
+        /// </summary>
+        public static string ErrorPromptActivated {
+            get {
+                return ResourceManager.GetString("ErrorPromptActivated", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Sucht eine lokalisierte Zeichenfolge, die Nicht über Verbindungsfehler benachrichtigen ähnelt.
+        /// </summary>
+        public static string ErrorPromptDeactivated {
+            get {
+                return ResourceManager.GetString("ErrorPromptDeactivated", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Sucht eine lokalisierte Zeichenfolge, die Beenden ähnelt.
+        /// </summary>
+        public static string ExitApplication {
+            get {
+                return ResourceManager.GetString("ExitApplication", resourceCulture);
             }
         }
         
@@ -117,6 +153,34 @@ namespace MicMuter.WPF {
             get {
                 object obj = ResourceManager.GetObject("RedMicrophone", resourceCulture);
                 return ((System.Drawing.Icon)(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Sucht eine lokalisierte Ressource vom Typ System.Drawing.Icon ähnlich wie (Symbol).
+        /// </summary>
+        public static System.Drawing.Icon SandGlass {
+            get {
+                object obj = ResourceManager.GetObject("SandGlass", resourceCulture);
+                return ((System.Drawing.Icon)(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Sucht eine lokalisierte Zeichenfolge, die Soundausgabe aktiv ähnelt.
+        /// </summary>
+        public static string SoundOutputActivated {
+            get {
+                return ResourceManager.GetString("SoundOutputActivated", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Sucht eine lokalisierte Zeichenfolge, die Soundausgabe inaktiv ähnelt.
+        /// </summary>
+        public static string SoundOutputDeactivated {
+            get {
+                return ResourceManager.GetString("SoundOutputDeactivated", resourceCulture);
             }
         }
     }

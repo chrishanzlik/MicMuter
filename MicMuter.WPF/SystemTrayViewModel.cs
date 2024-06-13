@@ -7,17 +7,32 @@ using System;
 using System.Reactive;
 using System.Reactive.Disposables;
 using System.Reactive.Linq;
+using System.Runtime.Serialization;
 using System.Windows;
 
 namespace MicMuter.WPF
 {
+    [DataContract]
     public class SystemTrayViewModel : ReactiveObject, IActivatableViewModel
     {
         private readonly IAudioService _audioService;
         private readonly IDeviceInteractionService _deviceService;
 
-        readonly ObservableAsPropertyHelper<bool> _playSounds;
-        public bool PlaySounds => _playSounds.Value;
+        private bool _playSounds = true;
+        [DataMember]
+        public bool PlaySounds
+        {
+            get => _playSounds;
+            set => this.RaiseAndSetIfChanged(ref _playSounds, value);
+        }
+
+        private bool _enableConnectionErrorPrompt = true;
+        [DataMember]
+        public bool ConnectionErrorPromptActive
+        {
+            get => _enableConnectionErrorPrompt;
+            set => this.RaiseAndSetIfChanged(ref _enableConnectionErrorPrompt, value);
+        }
 
         readonly ObservableAsPropertyHelper<string> _statusIconPath;
         public string StatusIconPath => _statusIconPath.Value;
@@ -31,6 +46,7 @@ namespace MicMuter.WPF
         public ReactiveCommand<MicState, Unit> SendMicrophoneState { get; }
         public ReactiveCommand<bool, MicState> ToggleMicrophone { get; }
         public ReactiveCommand<Unit, Unit> ToggleStatusSoundOutput { get; }
+        public ReactiveCommand<Unit, Unit> ToggleConnectionErrorPromptActivation { get; }
         public ReactiveCommand<Unit, Unit> Connect { get; }
         public ReactiveCommand<Unit, Unit> ExitApplication { get; } = ReactiveCommand.Create(() => Application.Current.Shutdown());
 
@@ -46,6 +62,7 @@ namespace MicMuter.WPF
             ToggleMicrophone = ReactiveCommand.CreateFromTask<bool, MicState>(_audioService.ToggleMicrophoneAsync);
             Connect = ReactiveCommand.CreateFromObservable(_deviceService.Connect);
             ToggleStatusSoundOutput = ReactiveCommand.Create(() => { });
+            ToggleConnectionErrorPromptActivation = ReactiveCommand.Create(() => { });
 
             _initialConnected = Observable.Merge(
                 Connect.Select(_ => true),
@@ -57,12 +74,18 @@ namespace MicMuter.WPF
                 .Select(state => state == MicState.Muted ? "Resources/mic-red.ico" : "Resources/mic-green.ico")
                 .ToProperty(this, x => x.StatusIconPath);
 
-            _playSounds = ToggleStatusSoundOutput
-                .Select((_) => !PlaySounds)
-                .ToProperty(this, x => x.PlaySounds, () => true);
-
             this.WhenActivated(disposable =>
             {
+                ToggleStatusSoundOutput
+                    .Select((_) => !PlaySounds)
+                    .BindTo(this, x => x.PlaySounds, () => true)
+                    .DisposeWith(disposable);
+
+                ToggleConnectionErrorPromptActivation
+                    .Select((_) => !ConnectionErrorPromptActive)
+                    .BindTo(this, x => x.ConnectionErrorPromptActive)
+                    .DisposeWith(disposable);
+
                 _audioService.StateChanges
                     .Merge(Observable.Interval(TimeSpan.FromSeconds(5)).Select(_ => _audioService.State))
                     .InvokeCommand(SendMicrophoneState)
@@ -80,10 +103,13 @@ namespace MicMuter.WPF
         private IDisposable TryToConnect()
         {
             return Connect.Execute().Subscribe((_) => { }, error => {
-                Interactions.ConnectionError.Handle(error).Subscribe(recovery =>
+                if (ConnectionErrorPromptActive)
                 {
-                    if (recovery == ErrorRecoveryOption.Retry) TryToConnect();
-                });
+                    Interactions.ConnectionError.Handle(error).Subscribe(recovery =>
+                    {
+                        if (recovery == ErrorRecoveryOption.Retry) TryToConnect();
+                    });
+                }
             });
         }
     }

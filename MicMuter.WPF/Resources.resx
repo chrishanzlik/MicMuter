@@ -117,13 +117,25 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
+  <data name="Connect" xml:space="preserve">
+    <value>Verbinden</value>
+  </data>
   <data name="ConnectionErrorCaption" xml:space="preserve">
     <value>MicMuter Verbindung Fehlgeschlagen</value>
   </data>
   <data name="ConnectionErrorText" xml:space="preserve">
-    <value>Das MicMuter Gerät wurde nicht gefunden. Bitte stecken Sie das Gerät ein und verbinden es über das Taskleistenicon erneut.
+    <value>Es konnte keine Verbindung zum Endgerät hergestellt werden. Bitte überprüfen Sie ob das Gerät korrekt angeschlossen ist.
 
-Alternativ können Sie jetzt einen neuen Verbindungsversuch vornehmen?</value>
+Möchten Sie einen erneuten Verbindungsversuch unternehmen?</value>
+  </data>
+  <data name="ErrorPromptActivated" xml:space="preserve">
+    <value>Über Verbindungsfehler benachrichtigen</value>
+  </data>
+  <data name="ErrorPromptDeactivated" xml:space="preserve">
+    <value>Nicht über Verbindungsfehler benachrichtigen</value>
+  </data>
+  <data name="ExitApplication" xml:space="preserve">
+    <value>Beenden</value>
   </data>
   <assembly alias="System.Windows.Forms" name="System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" />
   <data name="GreenMicrophone" type="System.Resources.ResXFileRef, System.Windows.Forms">
@@ -137,5 +149,14 @@ Alternativ können Sie jetzt einen neuen Verbindungsversuch vornehmen?</value>
   </data>
   <data name="RedMicrophone" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>Resources\mic-red.ico;System.Drawing.Icon, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="SandGlass" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>Resources\sand-glass.ico;System.Drawing.Icon, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="SoundOutputActivated" xml:space="preserve">
+    <value>Soundausgabe aktiv</value>
+  </data>
+  <data name="SoundOutputDeactivated" xml:space="preserve">
+    <value>Soundausgabe inaktiv</value>
   </data>
 </root>
